@@ -167,17 +167,18 @@ class EventTestCase(unittest.TestCase):
         pairs as input
         """
         # Peru 2001/6/23 20:34:23:
-        mt = [2.245, -0.547, -1.698, 1.339, -3.728, 1.444]
+        #  RTP system: [2.245, -0.547, -1.698, 1.339, -3.728, 1.444]
+        #  NED system: [-0.547, -1.698, 2.245, -1.444, 1.339, 3.728]
+        mt = [-0.547, -1.698, 2.245, -1.444, 1.339, 3.728]
         theta = np.arange(0, 360, 60)
         phi = np.zeros(len(theta))
-        rays = np.array([theta, phi])
+        rays = np.array([theta, phi]) * np.pi / 180.0
         result = farfield(mt, rays, 'P')
-        ref = np.array([[-0., 1.06567166, -2.26055006, 2.19679324, -0.44435406,
-                         -2.07785517], [-0., 0., -0., 0., -0., -0.],
-                        [-1.698, 3.32980367, -3.16993006, 1.64100194,
-                         -0.15311543,
-                        -0.04592479]])
-        np.testing.assert_allclose(result, ref)
+        ref = np.array([[0., 1.13501984, -0.873480164, 2.749332e-16,
+                        -1.13501984, 0.873480164], [0, 0, -0, 0, -0, 0],
+                        [2.245, 0.655304008, 0.504304008, -2.245,
+                         -0.655304008, -0.504304008]])
+        np.testing.assert_allclose(result, ref, rtol=1e-5, atol=1e-8)
 
 
 class OriginTestCase(unittest.TestCase):
@@ -588,7 +589,7 @@ class CatalogBasemapTestCase(unittest.TestCase):
                              reltol=reltol) as ic:
             rcParams['savefig.dpi'] = 72
             cat.plot(method='basemap', outfile=ic.name, projection='local',
-                     resolution='i', continent_fill_color='0.3',
+                     resolution='l', continent_fill_color='0.3',
                      color='date', colormap='gist_heat')
 
 
@@ -974,6 +975,25 @@ class ResourceIdentifierTestCase(unittest.TestCase):
         self.assertEqual(rid, rid2)
         self.assertEqual(rid, rid3)
 
+    def test_error_message_for_failing_quakeml_id_conversion(self):
+        """
+        Converting an id to a QuakeML compatible id might fail. Test the
+        error message.
+        """
+        invalid_id = "http://example.org"
+        rid = ResourceIdentifier(invalid_id)
+        with self.assertRaises(ValueError) as e:
+            rid.get_quakeml_uri()
+        self.assertEqual(
+            e.exception.args[0],
+            "The id 'http://example.org' is not a valid QuakeML resource "
+            "identifier. ObsPy tried modifying it to "
+            "'smi:local/http://example.org' but it is still not valid. Please "
+            "make sure all resource ids are either valid or can be made valid "
+            "by prefixing them with 'smi:<authority_id>/'. Valid ids are "
+            "specified in the QuakeML manual section 3.1 and in particular "
+            "exclude colons for the final part.")
+
 
 class ResourceIDEventScopeTestCase(unittest.TestCase):
     """
@@ -1103,6 +1123,22 @@ class BaseTestCase(unittest.TestCase):
             e.exception.args[0],
             "On Origin object: Value '-inf' for 'latitude' is "
             "not a finite floating point value.")
+
+    def test_resource_ids_refer_to_newest_object(self):
+        """
+        Tests that resource ids which are assigned multiple times but point to
+        identical objects always point to the newest object. This prevents some
+        odd behaviour.
+        """
+        t1 = UTCDateTime(2010, 1, 1)
+        t2 = UTCDateTime(2010, 1, 1)
+
+        rid = ResourceIdentifier("a", referred_object=t1)
+        rid = ResourceIdentifier("a", referred_object=t2)
+
+        del t1
+
+        self.assertEqual(rid.get_referred_object(), t2)
 
 
 def suite():

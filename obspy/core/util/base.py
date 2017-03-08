@@ -11,7 +11,6 @@ Base utilities and constants for ObsPy.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from future.builtins import *  # NOQA @UnusedWildImport
-from future import standard_library
 from future.utils import native_str
 
 import doctest
@@ -20,9 +19,7 @@ import io
 import os
 import sys
 import tempfile
-
-with standard_library.hooks():
-    from collections import OrderedDict
+from collections import OrderedDict
 
 from pkg_resources import iter_entry_points, load_entry_point
 import numpy as np
@@ -41,7 +38,7 @@ DEFAULT_MODULES = ['clients.filesystem', 'core', 'db', 'geodetics', 'imaging',
                    'io.quakeml', 'io.reftek', 'io.sac', 'io.seg2', 'io.segy',
                    'io.seisan', 'io.sh', 'io.shapefile', 'io.seiscomp',
                    'io.stationtxt', 'io.stationxml', 'io.wav', 'io.xseed',
-                   'io.y', 'io.zmap', 'realtime', 'signal', 'taup']
+                   'io.y', 'io.zmap', 'realtime', 'scripts', 'signal', 'taup']
 NETWORK_MODULES = ['clients.arclink', 'clients.earthworm', 'clients.fdsn',
                    'clients.iris', 'clients.neic', 'clients.seedlink',
                    'clients.seishub', 'clients.syngine']

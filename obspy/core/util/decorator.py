@@ -25,7 +25,7 @@ import warnings
 import zipfile
 
 import numpy as np
-from decorator import decorator, decorate
+from decorator import decorator
 
 from obspy.core.util import get_example_file
 from obspy.core.util.base import NamedTemporaryFile
@@ -88,6 +88,10 @@ def deprecated_keywords(keywords):
                 if key in kwargs:
                     new_keyword_appearance_counts[new_key] += 1
             for key_ in keywords.values():
+                # ignore `None` as new value, it means that no mapping is
+                # happening..
+                if key_ is None:
+                    continue
                 if new_keyword_appearance_counts[key_] > 1:
                     conflicting_keys = ", ".join(
                         [old_key for old_key, new_key in keywords.items()
@@ -296,20 +300,38 @@ def map_example_filename(arg_kwarg_name):
     return _map_example_filename
 
 
+def _decorate_polyfill(func, caller):
+    """
+    decorate(func, caller) decorates a function using a caller.
+    """
+    try:
+        from decorator import decorate
+        return decorate(func, caller)
+    except ImportError:
+        from decorator import FunctionMaker
+        evaldict = dict(_call_=caller, _func_=func)
+        fun = FunctionMaker.create(
+            func, "return _call_(_func_, %(shortsignature)s)",
+            evaldict, __wrapped__=func)
+        if hasattr(func, '__qualname__'):
+            fun.__qualname__ = func.__qualname__
+        return fun
+
+
 def rlock(func):
-        """
-        Place a threading recursive lock (Rlock) on the wrapped function
-        """
-        # This lock will be instantiated at function creation time, i.e. at the
-        # time the Python interpreter sees the decorated function the very
-        # first time - this lock thus exists once for each decorated function.
-        _rlock = threading.RLock()
+    """
+    Place a threading recursive lock (Rlock) on the wrapped function
+    """
+    # This lock will be instantiated at function creation time, i.e. at the
+    # time the Python interpreter sees the decorated function the very
+    # first time - this lock thus exists once for each decorated function.
+    _rlock = threading.RLock()
 
-        def _locked_f(f, *args, **kwargs):
-            with _rlock:
-                return func(*args, **kwargs)
+    def _locked_f(f, *args, **kwargs):
+        with _rlock:
+            return func(*args, **kwargs)
 
-        return decorate(func, _locked_f)
+    return _decorate_polyfill(func, _locked_f)
 
 
 if __name__ == '__main__':

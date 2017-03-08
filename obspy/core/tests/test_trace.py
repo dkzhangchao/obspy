@@ -1333,13 +1333,27 @@ class TraceTestCase(unittest.TestCase):
         """
         data = np.ones(11)
         tr = Trace(data=data)
-        tr.taper(max_percentage=None, side="left")
+
+        # overlong taper - raises UserWarning - ignoring
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", UserWarning)
+            tr.taper(max_percentage=None, side="left")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
+
         self.assertTrue(tr.data[:5].sum() < 5.)
         self.assertEqual(tr.data[6:].sum(), 5.)
 
         data = np.ones(11)
         tr = Trace(data=data)
-        tr.taper(max_percentage=None, side="right")
+
+        # overlong taper - raises UserWarning - ignoring
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", UserWarning)
+            tr.taper(max_percentage=None, side="right")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
+
         self.assertEqual(tr.data[:5].sum(), 5.)
         self.assertTrue(tr.data[6:].sum() < 5.)
 
@@ -1349,8 +1363,13 @@ class TraceTestCase(unittest.TestCase):
 
         data = np.ones(npts)
         tr = Trace(data=data, header={'sampling': 1.})
-        # test an overlong taper request, should still work
-        tr.taper(max_percentage=0.7, max_length=int(npts / 2) + 1)
+
+        # test an overlong taper request, still works but raises UserWarning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", UserWarning)
+            tr.taper(max_percentage=0.7, max_length=int(npts / 2) + 1)
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
 
         data = np.ones(npts)
         tr = Trace(data=data, header={'sampling': 1.})
@@ -1724,7 +1743,13 @@ class TraceTestCase(unittest.TestCase):
         filename = os.path.join(path, 'data', 'stationxml_BK.CMB.__.LKS.xml')
         inv = read_inventory(filename, format='StationXML')
         tr.attach_response(inv)
-        tr.remove_response()
+
+        # raises UserWarning: Stage gain not defined - ignoring
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", UserWarning)
+            tr.remove_response()
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
 
     def test_processing_info_remove_response_and_sensitivity(self):
         """

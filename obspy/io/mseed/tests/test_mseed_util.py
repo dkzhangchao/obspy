@@ -124,15 +124,41 @@ class MSEEDUtilTestCase(unittest.TestCase):
             self.assertEqual(
                 ts * 1000000, util._convert_datetime_to_mstime(dt))
         # Additional sanity tests.
-        # Today.
-        now = UTCDateTime()
-        self.assertEqual(now, util._convert_mstime_to_datetime(
-            util._convert_datetime_to_mstime(now)))
+        # Random date that previously failed.
+        dt = UTCDateTime(2017, 3, 6, 4, 12, 16, 260696)
+        self.assertEqual(dt, util._convert_mstime_to_datetime(
+            util._convert_datetime_to_mstime(dt)))
         # Some random date.
         random.seed(815)  # make test reproducible
         timestring = random.randint(0, 2000000) * 1e6
         self.assertEqual(timestring, util._convert_datetime_to_mstime(
             util._convert_mstime_to_datetime(timestring)))
+
+    def test_convert_datetime2(self):
+        """
+        Some failing test discovered in #1670
+        """
+        # 1
+        dt = UTCDateTime(ns=1487021451935737333)
+        self.assertEqual(str(dt), "2017-02-13T21:30:51.935737Z")
+        self.assertEqual(util._convert_datetime_to_mstime(dt),
+                         1487021451935737)
+        self.assertEqual(dt, util._convert_mstime_to_datetime(
+            util._convert_datetime_to_mstime(dt)))
+        # 2
+        dt = UTCDateTime(ns=1487021451935736449)
+        self.assertEqual(str(dt), "2017-02-13T21:30:51.935736Z")
+        self.assertEqual(util._convert_datetime_to_mstime(dt),
+                         1487021451935736)
+        self.assertEqual(dt, util._convert_mstime_to_datetime(
+            util._convert_datetime_to_mstime(dt)))
+        # 3
+        dt = UTCDateTime(ns=1487021451935736501)
+        self.assertEqual(str(dt), "2017-02-13T21:30:51.935737Z")
+        self.assertEqual(util._convert_datetime_to_mstime(dt),
+                         1487021451935737)
+        self.assertEqual(dt, util._convert_mstime_to_datetime(
+            util._convert_datetime_to_mstime(dt)))
 
     def test_get_record_information(self):
         """
@@ -1095,19 +1121,20 @@ class MSEEDUtilTestCase(unittest.TestCase):
             tf.close()
             shutil.copy(os.path.join(self.path, 'data', 'test.mseed'),
                         tf.name)
-            # No flags set.
-            flags = util.get_timing_and_data_quality(tf.name)
-            self.assertEqual(flags["data_quality_flags"], [0] * 8)
-            # Set flags.
+            # No data quality flags set.
+            flags = util.get_flags(tf.name)['data_quality_flags_counts']
+            self.assertEqual(max(flags.values()), 0)
+            # Set  data quality flags.
             util.set_flags_in_fixed_headers(tf.name, {
                 "NL.HGN.00.BHZ": {"data_qual_flags": {
                     'glitches_detected': True,
                     'time_tag_questionable': True}}})
             # Flags are set now.
-            flags = util.get_timing_and_data_quality(tf.name)
+            flags = util.get_flags(tf.name)['data_quality_flags_counts']
             # 2 because file contains two records.
-            self.assertEqual(flags["data_quality_flags"],
-                             [0, 0, 0, 2, 0, 0, 0, 2])
+            self.assertEqual(sum(flags.values()), 4)
+            self.assertEqual(flags['glitches'], 2)
+            self.assertEqual(flags['suspect_time_tag'], 2)
 
     def _check_values(self, file_bfr, trace_id, record_numbers, expected_bytes,
                       reclen):
