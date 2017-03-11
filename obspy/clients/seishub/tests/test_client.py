@@ -27,6 +27,7 @@ class ClientTestCase(unittest.TestCase):
     def setUp(self):
         self.client = Client(TESTSERVER)
 
+    @vcr
     def test_get_waveforms(self):
         """
         Test fetching waveforms from the server

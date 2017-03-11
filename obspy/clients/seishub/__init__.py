@@ -32,7 +32,8 @@ BW.MANZ..EHZ | 2010-01-01T10:00:00.000000Z - ... | 200.0 Hz, 4001 samples
 Advanced Examples
 -----------------
 
->>> client.waveform.get_network_ids()     #doctest: +SKIP
+>>> net_ids = client.waveform.get_network_ids()  # doctest: +VCR
+>>> print(net_ids)  # doctest: +SKIP
 ['KT', 'BW', 'NZ', 'GR', ...]
 
 >>> sta_ids = client.waveform.get_station_ids(network='BW')  # doctest: +VCR
@@ -41,7 +42,7 @@ Advanced Examples
 
 >>> cha_ids = client.waveform.get_channel_ids(
 ...     network='BW', station='MANZ')  # doctest: +VCR
->>> sorted(cha_ids)  # doctest: #NORMALIZE_WHITESPACE
+>>> sorted(cha_ids)  # doctest: +NORMALIZE_WHITESPACE
 ['AEX', 'AEY', 'BHE', 'BHN', 'BHZ', 'EHE', 'EHN', 'EHZ', 'HHE', 'HHN', 'HHZ',
  'LOG', 'SHE', 'SHN', 'SHZ']
 
