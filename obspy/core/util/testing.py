@@ -26,10 +26,10 @@ import warnings
 
 from lxml import etree
 import numpy as np
+from vcr import vcr
 
 from obspy.core.util.base import NamedTemporaryFile, get_matplotlib_version
 from obspy.core.util.misc import MatplotlibBackend
-from obspy.core.util.vcr import vcr
 
 
 MATPLOTLIB_VERSION = get_matplotlib_version()
