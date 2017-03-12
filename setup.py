@@ -112,7 +112,7 @@ INSTALL_REQUIRES = [
     'decorator',
     'requests']
 EXTRAS_REQUIRE = {
-    'tests': ['flake8>=2', 'pyimgur', 'pyproj', 'pep8-naming'],
+    'tests': ['flake8>=2', 'pyimgur', 'pyproj', 'pep8-naming', 'vcr'],
     'arclink': ['m2crypto'],
     'io.shapefile': ['gdal'],
     }
